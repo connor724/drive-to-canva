@@ -1,0 +1,11 @@
+{
+  "name": "drive-to-canva",
+  "version": "1.0.0",
+  "description": "Import Google Drive folders to Canva",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
