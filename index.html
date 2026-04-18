@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Drive → Canva Importer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .wrap { max-width: 560px; width: 100%; }
+
+    .header { margin-bottom: 2rem; }
+    .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+    .logo-badge {
+      display: flex; align-items: center; gap: 7px;
+      padding: 6px 12px; border-radius: 8px;
+      border: 0.5px solid #d3d1c7; background: #fff;
+      font-size: 13px; color: #5f5e5a;
+    }
+    h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: #888780; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 0.5px solid #d3d1c7;
+      padding: 1.5rem;
+      margin-bottom: 12px;
+    }
+    .card-title { font-size: 15px; font-weight: 500; margin-bottom: 1rem; }
+    .label { font-size: 13px; color: #888780; margin-bottom: 6px; display: block; }
+
+    input[type="text"], input[type="url"] {
+      width: 100%;
+      height: 38px;
+      padding: 0 12px;
+      border: 0.5px solid #d3d1c7;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1a1a18;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus { border-color: #7f77dd; box-shadow: 0 0 0 3px rgba(127,119,221,0.12); }
+
+    .url-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .url-row input { flex: 1; }
+    .icon-btn {
+      width: 38px; height: 38px;
+      border: 0.5px solid #d3d1c7;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 18px;
+      color: #888780;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { background: #f1efe8; }
+
+    .add-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 4px;
+    }
+    .add-link {
+      font-size: 13px; color: #7f77dd;
+      background: none; border: none;
+      cursor: pointer; padding: 4px 0;
+    }
+    .add-link:hover { text-decoration: underline; }
+
+    /* Canva connect section */
+    .connect-area { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .connect-info { display: flex; align-items: center; gap: 10px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #d3d1c7; flex-shrink: 0; }
+    .dot.green { background: #639922; }
+    .dot.red { background: #e24b4a; }
+    .connect-name { font-size: 14px; color: #1a1a18; }
+    .connect-sub { font-size: 12px; color: #888780; }
+
+    .btn {
+      padding: 0 16px; height: 36px;
+      border-radius: 8px; border: 0.5px solid #d3d1c7;
+      background: transparent; cursor: pointer;
+      font-size: 13px; color: #1a1a18;
+      white-space: nowrap; text-decoration: none;
+      display: inline-flex; align-items: center;
+    }
+    .btn:hover { background: #f1efe8; }
+    .btn-primary {
+      background: #7f77dd; color: #fff;
+      border-color: #7f77dd; font-size: 15px;
+      font-weight: 500; width: 100%; height: 46px;
+      border-radius: 10px; justify-content: center;
+      margin-top: 4px;
+    }
+    .btn-primary:hover { background: #6e67cc; border-color: #6e67cc; }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-danger { color: #a32d2d; border-color: #f0c0c0; }
+    .btn-danger:hover { background: #fcebeb; }
+
+    /* Progress */
+    .progress-card { display: none; }
+    .prog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .prog-label { font-size: 14px; color: #1a1a18; font-weight: 500; }
+    .prog-count { font-size: 13px; color: #888780; }
+    .track { height: 5px; background: #f1efe8; border-radius: 99px; overflow: hidden; margin-bottom: 12px; }
+    .fill { height: 100%; background: #7f77dd; border-radius: 99px; width: 0%; transition: width 0.4s ease; }
+
+    .log {
+      font-size: 12px; font-family: 'SF Mono', 'Fira Mono', monospace;
+      max-height: 180px; overflow-y: auto;
+      border: 0.5px solid #d3d1c7; border-radius: 8px;
+      padding: 10px 12px; background: #fafaf8;
+    }
+    .log-line { padding: 2px 0; line-height: 1.6; border-bottom: 0.5px solid #f1efe8; }
+    .log-line:last-child { border-bottom: none; }
+    .ok { color: #3b6d11; }
+    .err { color: #a32d2d; }
+    .info { color: #888780; }
+    .bold { color: #1a1a18; font-weight: 500; }
+
+    /* Notification */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1a1a18; color: #fff;
+      padding: 10px 20px; border-radius: 8px;
+      font-size: 14px; opacity: 0;
+      transition: opacity 0.3s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header">
+    <div class="logo-row">
+      <div class="logo-badge">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 19h6.5L12 13l3.5 6H22L12 2z" fill="#4285F4"/>
+          <path d="M2 19h6.5l3.5-6-3.5-6L2 19z" fill="#0F9D58" opacity="0.7"/>
+          <path d="M22 19h-6.5L12 13l3.5-6L22 19z" fill="#F4B400" opacity="0.8"/>
+        </svg>
+        Google Drive
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="logo-badge">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="5" fill="#7D2AE8"/><path d="M7 8h10M7 12h10M7 16h6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        Canva
+      </div>
+    </div>
+    <h1>Drive → Canva</h1>
+    <p class="subtitle">Import a public Google Drive folder into your Canva uploads</p>
+  </div>
+
+  <!-- Step 1: Folders -->
+  <div class="card">
+    <p class="card-title">Google Drive folders</p>
+    <span class="label">Public folder links</span>
+    <div id="url-list">
+      <div class="url-row" id="row-0">
+        <input type="url" id="url-0" placeholder="https://drive.google.com/drive/folders/…" />
+      </div>
+    </div>
+    <button class="add-link" onclick="addRow()">+ Add another folder</button>
+  </div>
+
+  <!-- Step 2: Canva auth -->
+  <div class="card">
+    <p class="card-title">Canva account</p>
+    <div class="connect-area">
+      <div class="connect-info">
+        <div class="dot" id="dot"></div>
+        <div>
+          <div class="connect-name" id="connect-name">Not connected</div>
+          <div class="connect-sub" id="connect-sub">Connect once, stays remembered</div>
+        </div>
+      </div>
+      <div id="connect-actions">
+        <a href="/api/auth" class="btn" id="connect-btn">Connect Canva</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import button -->
+  <button class="btn btn-primary" id="import-btn" onclick="startImport()" disabled>
+    Import to Canva
+  </button>
+
+  <!-- Progress -->
+  <div class="card progress-card" id="progress-card" style="margin-top: 12px;">
+    <div class="prog-header">
+      <span class="prog-label" id="prog-label">Starting...</span>
+      <span class="prog-count" id="prog-count"></span>
+    </div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let rowCount = 1;
+  let isConnected = false;
+
+  // Check connection on load
+  async function checkConnection() {
+    try {
+      const res = await fetch('/api/me');
+      const data = await res.json();
+      if (data.connected) {
+        setConnected(data.name);
+      } else if (data.expired) {
+        // Try refresh
+        const r = await fetch('/api/refresh', { method: 'POST' });
+        if (r.ok) {
+          const res2 = await fetch('/api/me');
+          const d2 = await res2.json();
+          if (d2.connected) setConnected(d2.name);
+        }
+      }
+    } catch (e) {}
+  }
+
+  function setConnected(name) {
+    isConnected = true;
+    document.getElementById('dot').className = 'dot green';
+    document.getElementById('connect-name').textContent = name || 'Connected';
+    document.getElementById('connect-sub').textContent = 'Canva account linked';
+    document.getElementById('connect-actions').innerHTML =
+      `<button class="btn btn-danger" onclick="disconnect()">Disconnect</button>`;
+    document.getElementById('import-btn').disabled = false;
+  }
+
+  async function disconnect() {
+    window.location.href = '/api/logout';
+  }
+
+  // Handle redirect params
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('connected') === 'true') {
+    window.history.replaceState({}, '', '/');
+    showToast('Canva connected successfully');
+    checkConnection();
+  } else if (params.get('error')) {
+    showToast('Error: ' + params.get('error'));
+    window.history.replaceState({}, '', '/');
+  }
+
+  checkConnection();
+
+  function addRow() {
+    const list = document.getElementById('url-list');
+    const row = document.createElement('div');
+    row.className = 'url-row';
+    row.id = 'row-' + rowCount;
+    row.innerHTML = `
+      <input type="url" id="url-${rowCount}" placeholder="https://drive.google.com/drive/folders/…" />
+      <button class="icon-btn" onclick="removeRow('row-${rowCount}')" title="Remove">✕</button>
+    `;
+    list.appendChild(row);
+    document.getElementById('url-' + rowCount).focus();
+    rowCount++;
+  }
+
+  function removeRow(id) {
+    document.getElementById(id)?.remove();
+  }
+
+  function log(msg, type = 'info') {
+    const el = document.getElementById('log');
+    const line = document.createElement('div');
+    line.className = 'log-line ' + type;
+    line.textContent = msg;
+    el.appendChild(line);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function setProgress(done, total, label) {
+    document.getElementById('prog-label').textContent = label;
+    document.getElementById('prog-count').textContent = total ? `${done} / ${total}` : '';
+    document.getElementById('fill').style.width = total ? Math.round(done / total * 100) + '%' : '0%';
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  async function startImport() {
+    if (!isConnected) return;
+
+    const inputs = document.querySelectorAll('#url-list input');
+    const urls = [...inputs].map(i => i.value.trim()).filter(Boolean);
+    if (!urls.length) { showToast('Add at least one folder URL'); return; }
+
+    document.getElementById('import-btn').disabled = true;
+    const progressCard = document.getElementById('progress-card');
+    progressCard.style.display = 'block';
+    document.getElementById('log').innerHTML = '';
+    setProgress(0, 0, 'Starting import...');
+
+    for (const url of urls) {
+      log(`Starting: ${url}`, 'info');
+
+      try {
+        const res = await fetch('/api/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ folderUrl: url }),
+        });
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const event = JSON.parse(line.slice(6));
+              handleEvent(event);
+            } catch (e) {}
+          }
+        }
+      } catch (e) {
+        log('Connection error: ' + e.message, 'err');
+      }
+    }
+
+    document.getElementById('import-btn').disabled = false;
+    document.getElementById('import-btn').textContent = 'Import again';
+  }
+
+  function handleEvent(e) {
+    switch (e.type) {
+      case 'status':
+        setProgress(0, 0, e.message);
+        log(e.message, 'info');
+        break;
+      case 'folder':
+        log('Folder created in Canva: ' + (e.message || ''), 'bold');
+        break;
+      case 'progress':
+        setProgress(e.done, e.total, 'Uploading files...');
+        log((e.success ? '✓ ' : '✗ ') + e.file, e.success ? 'ok' : 'err');
+        break;
+      case 'done':
+        setProgress(e.done, e.done, 'Import complete');
+        log('', 'info');
+        log(e.message, 'bold');
+        showToast(e.message);
+        break;
+      case 'error':
+        log('Error: ' + e.message, 'err');
+        setProgress(0, 0, 'Import failed');
+        break;
+    }
+  }
+</script>
+</body>
+</html>
